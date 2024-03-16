@@ -1,4 +1,5 @@
 #!/bin/bash
+
 options=(
     "-l 1000 -n 1"
     "-l 1000 -n 5"
@@ -51,8 +52,18 @@ run_benchmarks() {
     rm -f benchmark/result.txt
     for filename in benchmark/*.txt;
     do
-        awk 'gsub(",", ".")' "${filename}" | awk -v file="${filename}" -F '[m]' '{sum+=$1*60+$2} END {printf "%s = %.5f s\n", file, sum/NR}' >> benchmark/result.txt
+        local thread
+        local length
+
+        if [[ ${filename} =~ benchmark/([0-9]+)_([0-9]+)\.txt ]]; then
+            thread="${BASH_REMATCH[1]}"
+            length="${BASH_REMATCH[2]}"
+        fi
+
+        awk 'gsub(",", ".")' "${filename}" | awk -v n="${thread}" -v l="${length}" -F '[m]' '{sum+=$1*60+$2} END {printf "%3i | %12i | %.5fs\n", n, l, sum/NR}' >> benchmark/result.txt
     done;
+
+    sort -n -t '|' -k1,1 -k2,2 -o benchmark/result.txt benchmark/result.txt
 }
 
 run_benchmarks "$@"

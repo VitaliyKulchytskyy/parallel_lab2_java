@@ -29,3 +29,4 @@ bin/
 .DS_Store
 /bench_backup/
 /benchmark/
+/.idea/

@@ -1,9 +1,11 @@
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ParallelMin {
     private final int[] Array;
     private final int ThreadNum;
-    private final CountDownLatch Count;
+    private int ThreadCount = 0;
+    // private final CountDownLatch Count;
     private int MinIndex = 0;
 
     public class FindMin implements Runnable {
@@ -17,9 +19,9 @@ public class ParallelMin {
 
         @Override
         public void run() {
-            int min = getMinIndex();
-            setMinIndex(min);
-            Count.countDown();
+            setMinIndex(getMinIndex());
+            incThread();
+            // Count.countDown();
         }
 
         private int getMinIndex() {
@@ -36,7 +38,7 @@ public class ParallelMin {
     public ParallelMin(int[] array, int threadNum) {
         Array = array;
         ThreadNum = threadNum;
-        Count = new CountDownLatch(threadNum);
+        // Count = new CountDownLatch(threadNum);
     }
 
     public int getMinIndex() throws InterruptedException {
@@ -48,9 +50,19 @@ public class ParallelMin {
             }
         }
         new Thread(new FindMin(step * (ThreadNum - 1),  Array.length - 1)).start();
-        Count.await();
 
+        return findMinIndex();
+    }
+
+    synchronized private int findMinIndex() throws InterruptedException {
+        while(ThreadCount < ThreadNum)
+            wait();
         return MinIndex;
+    }
+
+    synchronized private void incThread() {
+        ThreadCount++;
+        notify();
     }
 
     synchronized private void setMinIndex(int min) {
